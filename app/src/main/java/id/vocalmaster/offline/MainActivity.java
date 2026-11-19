@@ -34,7 +34,7 @@ public class MainActivity extends Activity {
         stopMic(); onHome=false; backAction=()->home();
         page=col(); page.setBackground(shape(bg,0,0xFF292044));
         ScrollView sc=new ScrollView(this); sc.setFillViewport(true);
-        body=col(); body.setPadding(20,30,20,30); sc.addView(body); page.addView(sc); setContentView(page);
+        body=col(); body.setPadding(20,48,20,30); sc.addView(body); page.addView(sc); setContentView(page);
         LinearLayout nav=new LinearLayout(this); nav.setGravity(Gravity.CENTER_VERTICAL); nav.setPadding(0,0,0,16);
         TextView back=txt("‹",26,white,true); back.setGravity(Gravity.CENTER); back.setBackground(shape(0xFF292342,18,0xFF6555A0)); back.setElevation(10);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(48,44); bp.rightMargin=12; nav.addView(back,bp); back.setOnClickListener(v->goBack());
@@ -90,11 +90,11 @@ public class MainActivity extends Activity {
         private void home(){
         startPage("Your voice. Your power.","PERSONAL OFFLINE VOCAL COACH"); onHome=true; backAction=null;
         LinearLayout frame=col(); frame.setPadding(2,2,2,8); frame.setBackground(shape(0xFF7455D8,28,0xFFBCA9FF)); frame.setElevation(16f);
-        LinearLayout hero=col(); hero.setPadding(22,28,22,26); hero.setBackground(shape(0xFF1C2040,26,0xFF51447D)); frame.addView(hero);
+        LinearLayout hero=col(); hero.setPadding(22,34,22,28); hero.setBackground(shape(0xFF1C2040,26,0xFF51447D)); frame.addView(hero);
         LinearLayout brandRow=new LinearLayout(this); brandRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView logo=txt("♫",36,white,true); logo.setGravity(Gravity.CENTER); logo.setBackground(shape(0xFF49377F,17,0xFFAB91FF));
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(66,64); lp.rightMargin=12; brandRow.addView(logo,lp);
-        LinearLayout brand=col(); brand.addView(txt("GV VOKAL MASTER",17,white,true)); brand.addView(txt("BY RAKANA  •  OFFLINE STUDIO",10,cyan,true)); brandRow.addView(brand); hero.addView(brandRow);
+        TextView logo=txt("♫",44,white,true); logo.setGravity(Gravity.CENTER); logo.setBackground(shape(0xFF49377F,17,0xFFAB91FF));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(76,74); lp.rightMargin=12; brandRow.addView(logo,lp);
+        LinearLayout brand=col(); brand.addView(txt("GV VOKAL MASTER",21,white,true)); brand.addView(txt("BY RAKANA  •  OFFLINE STUDIO",10,cyan,true)); brandRow.addView(brand); hero.addView(brandRow);
         TextView h=txt("Temukan suara\nterbaikmu.",30,white,true); h.setPadding(0,22,0,8); hero.addView(h);
         hero.addView(txt("Latih teknik. Kenali nada. Bangun karakter vokal.",13,0xFFD5D2EA,false));
         TextView start=txt("▶   ENTER VOCAL STUDIO",12,white,true); start.setGravity(Gravity.CENTER); start.setPadding(12,16,12,16);
@@ -104,17 +104,19 @@ public class MainActivity extends Activity {
         LinearLayout stats=new LinearLayout(this); stats.setPadding(0,16,0,7);
         stats.addView(stat("0"+sessions,"SESI LATIHAN")); stats.addView(stat("100%","OFFLINE")); body.addView(stats);
         label("Your vocal studio");
-        card("◉","Pitch Analyzer","Deteksi frekuensi, nama nada, dan kestabilan pitch.",this::tuner);
-        card("✺","Vocal Identity","Kenali perkiraan tipe suara, jangkauan vokal, karakter, dan rekomendasi genre.",this::identity);
-        card("◌","Breathing Coach","Latihan napas terarah untuk kontrol dan stamina.",()->exercise("Breathing Coach","Tarik napas lembut 4 hitungan. Tahan 2 hitungan, lalu hembuskan 6 hitungan.",4,2,6));
-        card("✧","Vocal Warm-up","Humming, lip trill, dan pemanasan rentang nada.",()->exercise("Vocal Warm-up","Mulai humming ringan, lanjut lip trill, lalu siren lembut. Jangan memaksa tenggorokan.",4,2,5));
-        card("♫","Virtual Piano","Nada referensi untuk membantu latihan intonasi.",this::piano);
-        card("⌁","Vocal Range Test","Eksplorasi nada rendah dan tinggi yang nyaman.",this::range);
-        card("▤","Vocal Academy","Materi teknik vokal dari dasar hingga lanjutan.",this::lessons);
+        LinearLayout grid=new LinearLayout(this);grid.setOrientation(1);
+        LinearLayout r1=new LinearLayout(this);r1.addView(menuTile("🎙","Pitch Analyzer","Deteksi nada",this::tuner),new LinearLayout.LayoutParams(0,-2,1));r1.addView(menuTile("🎧","Vocal Identity","Profil suara",this::identity),tileGap());grid.addView(r1);
+        LinearLayout r2=new LinearLayout(this);r2.setPadding(0,10,0,0);r2.addView(menuTile("🌬","Breathing Coach","Latihan napas",()->exercise("Breathing Coach","Tarik napas lembut 4 hitungan. Tahan 2 hitungan, lalu hembuskan 6 hitungan.",4,2,6)),new LinearLayout.LayoutParams(0,-2,1));r2.addView(menuTile("✨","Vocal Warm-up","Pemanasan vokal",()->exercise("Vocal Warm-up","Mulai humming ringan, lanjut lip trill, lalu siren lembut. Jangan memaksa tenggorokan.",4,2,5)),tileGap());grid.addView(r2);
+        LinearLayout r3=new LinearLayout(this);r3.setPadding(0,10,0,0);r3.addView(menuTile("🎹","Virtual Piano","Nada referensi",this::piano),new LinearLayout.LayoutParams(0,-2,1));r3.addView(menuTile("🎼","Vocal Range","Tes rentang nada",this::range),tileGap());grid.addView(r3);body.addView(grid);
+        LinearLayout shortcuts=new LinearLayout(this);shortcuts.setPadding(0,12,0,4);shortcuts.addView(menuShortcut("🎓  Vocal Academy",this::lessons),new LinearLayout.LayoutParams(0,54,1));shortcuts.addView(menuShortcut("⚙  Pengaturan",this::settings),tileGap());body.addView(shortcuts);
         label("About this studio");
         TextView credit=txt("GV Vokal Master  •  By Rakana\nDesigned for focused offline vocal practice.",11,muted,false); credit.setGravity(Gravity.CENTER); credit.setPadding(8,14,8,10); body.addView(credit);
     }
         private View stat(String value,String caption){LinearLayout box=col();box.setPadding(14,12,14,12);box.setBackground(shape(panel,17,0xFF303956));TextView v=txt(value,17,white,true);box.addView(v);box.addView(txt(caption,9,muted,true));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.setMargins(0,0,8,0);box.setLayoutParams(p);return box;}
+    private LinearLayout.LayoutParams tileGap(){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.leftMargin=9;return p;}
+    private View menuTile(String icon,String title,String desc,Runnable run){LinearLayout shell=col();shell.setPadding(1,1,1,6);shell.setBackground(shape(0xFF30265D,22,0xFF8068D0));shell.setElevation(10f);LinearLayout inner=col();inner.setGravity(Gravity.CENTER);inner.setPadding(6,16,6,14);inner.setBackground(shape(0xFF171D35,21,0xFF414B73));shell.addView(inner);TextView ic=txt(icon,31,white,true);ic.setGravity(Gravity.CENTER);ic.setBackground(shape(0xFF403274,17,0xFF8F7BE0));ic.setPadding(12,8,12,8);ic.setElevation(6f);inner.addView(ic);TextView name=txt(title,14,white,true);name.setGravity(Gravity.CENTER);name.setPadding(0,12,0,3);inner.addView(name);TextView d=txt(desc,10,cyan,true);d.setGravity(Gravity.CENTER);inner.addView(d);shell.setOnClickListener(v->run.run());return shell;}
+    private View menuShortcut(String title,Runnable run){TextView t=txt(title,13,white,true);t.setGravity(Gravity.CENTER);t.setBackground(shape(0xFF292342,18,0xFF7562B4));t.setElevation(7f);t.setOnClickListener(v->run.run());return t;}
+    private void settings(){startPage("Pengaturan","PERSONALIZE YOUR STUDIO");label("Bahasa aplikasi");card("🌐","Bahasa Indonesia","Bahasa yang sedang digunakan pada antarmuka aplikasi.",()->Toast.makeText(this,"Bahasa Indonesia aktif.",Toast.LENGTH_SHORT).show());card("🌍","English","Bahasa Inggris akan tersedia pada pembaruan berikutnya.",()->Toast.makeText(this,"English belum tersedia.",Toast.LENGTH_SHORT).show());label("Audio & perangkat");card("🔊","Suara piano","Nada piano menggunakan volume Media perangkat. Naikkan volume Media jika suara tidak terdengar.",()->piano());label("Tentang aplikasi");card("♫","GV Vokal Master – By Rakana","Pelatih vokal offline. Tidak memerlukan akun atau koneksi internet untuk fitur latihan.",()->{});action("KEMBALI KE MENU",this::home);}
     private void identity(){
         startPage("Vocal Identity","DISCOVER YOUR VOICE PROFILE");
         LinearLayout hero=col();hero.setPadding(17,18,17,18);hero.setBackground(shape(0xFF27204B,22,0xFF594A91));
