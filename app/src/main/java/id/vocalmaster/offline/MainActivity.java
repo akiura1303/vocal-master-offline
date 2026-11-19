@@ -25,7 +25,24 @@ public class MainActivity extends Activity {
     private Runnable backAction=null;
     private boolean onHome=true;
 
-    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);home();}
+    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);welcomePage();}
+    private void welcomePage(){
+        stopMic(); onHome=true; backAction=null;
+        page=col(); page.setGravity(Gravity.CENTER); page.setPadding(24,42,24,42); page.setBackground(shape(bg,0,0xFF292044));
+        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); scroll.setBackgroundColor(Color.TRANSPARENT);
+        LinearLayout wrap=col(); wrap.setGravity(Gravity.CENTER); wrap.setPadding(4,18,4,18); scroll.addView(wrap); page.addView(scroll,new LinearLayout.LayoutParams(-1,-1)); setContentView(page);
+        LinearLayout panel=col(); panel.setGravity(Gravity.CENTER); panel.setPadding(24,34,24,30); panel.setBackground(shape(0xFF1B2040,30,0xFF7964C9)); panel.setElevation(18f);
+        TextView emblem=txt("♫",58,white,true); emblem.setGravity(Gravity.CENTER); emblem.setBackground(shape(0xFF49377F,24,0xFFB49EFF)); emblem.setElevation(12f);
+        LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(108,104); ep.bottomMargin=22; panel.addView(emblem,ep);
+        TextView brand=txt("GV VOKAL MASTER",25,white,true); brand.setGravity(Gravity.CENTER); panel.addView(brand);
+        TextView by=txt("BY RAKANA  •  OFFLINE VOCAL STUDIO",10,cyan,true); by.setGravity(Gravity.CENTER); by.setPadding(0,8,0,0); panel.addView(by);
+        TextView welcome=txt("WELCOME TO\nYOUR VOCAL STUDIO",21,white,true); welcome.setGravity(Gravity.CENTER); welcome.setPadding(0,34,0,12); panel.addView(welcome);
+        TextView tagline=txt("Temukan karakter suaramu.\nLatih teknik. Bangun percaya diri.",13,muted,false); tagline.setGravity(Gravity.CENTER); tagline.setPadding(0,0,0,26); panel.addView(tagline);
+        TextView enter=txt("♫   ENTER THE STUDIO   →",14,white,true); enter.setGravity(Gravity.CENTER); enter.setPadding(14,18,14,18); enter.setBackground(shape(0xFF7657DF,19,0xFFC4B4FF)); enter.setElevation(12f);
+        panel.addView(enter,new LinearLayout.LayoutParams(-1,-2)); enter.setOnClickListener(v->{enter.animate().scaleX(.97f).scaleY(.97f).setDuration(80).withEndAction(()->home()).start();});
+        TextView foot=txt("100% OFFLINE  •  MADE FOR YOUR VOICE",9,cyan,true); foot.setGravity(Gravity.CENTER); foot.setPadding(0,24,0,0); panel.addView(foot);
+        wrap.addView(panel,new LinearLayout.LayoutParams(-1,-2));
+    }
     private GradientDrawable shape(int c,int r,int stroke){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{c,blend(c,0xFF11162B)});d.setCornerRadius(r);d.setStroke(1,stroke);return d;}
     private int blend(int a,int b){return Color.rgb((Color.red(a)+Color.red(b))/2,(Color.green(a)+Color.green(b))/2,(Color.blue(a)+Color.blue(b))/2);}
     private TextView txt(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
