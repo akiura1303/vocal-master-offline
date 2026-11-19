@@ -22,6 +22,8 @@ public class MainActivity extends Activity {
     private AudioRecord recorder; private volatile boolean listening=false; private Thread audioThread;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private int sessions=0;
+    private Runnable backAction=null;
+    private boolean onHome=true;
 
     @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);home();}
     private GradientDrawable shape(int c,int r,int stroke){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{c,blend(c,0xFF11162B)});d.setCornerRadius(r);d.setStroke(1,stroke);return d;}
@@ -29,20 +31,20 @@ public class MainActivity extends Activity {
     private TextView txt(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
     private LinearLayout col(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
     private void startPage(String title,String eyebrow){
-        stopMic();page=col();page.setBackgroundColor(bg);ScrollView sc=new ScrollView(this);sc.setFillViewport(true);body=col();body.setPadding(20,18,20,28);sc.addView(body);page.addView(sc);setContentView(page);
-        TextView brand=txt("GV  /  VOKAL MASTER",13,purple,true);body.addView(brand);
+        stopMic(); onHome=false; backAction=()->home(); page=col();page.setBackgroundColor(bg);ScrollView sc=new ScrollView(this);sc.setFillViewport(true);body=col();body.setPadding(20,18,20,28);sc.addView(body);page.addView(sc);setContentView(page);
+        LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER_VERTICAL);nav.setPadding(0,0,0,12); TextView back=txt("‹  KEMBALI",13,cyan,true);back.setPadding(12,10,18,10);back.setBackground(shape(0xFF202943,16,0xFF53618A));back.setElevation(7);back.setOnClickListener(v->goBack());nav.addView(back);TextView brand=txt("     GV  /  VOKAL MASTER",12,purple,true);nav.addView(brand);body.addView(nav);
         TextView head=txt(title,28,white,true);head.setPadding(0,9,0,2);body.addView(head);
         TextView sub=txt(eyebrow,12,muted,false);sub.setPadding(0,0,0,18);body.addView(sub);
     }
     private void label(String s){TextView t=txt(s.toUpperCase(Locale.ROOT),11,muted,true);t.setPadding(2,16,2,10);body.addView(t);}
     private void card(String icon,String title,String desc,Runnable run){
-        LinearLayout c=col();c.setPadding(16,15,16,15);c.setBackground(shape(panel,22,0xFF303956));
-        TextView ic=txt(icon,24,purple,true);c.addView(ic);TextView h=txt(title,17,white,true);h.setPadding(0,9,0,4);c.addView(h);c.addView(txt(desc,12,muted,false));
+        LinearLayout c=col();c.setPadding(18,17,18,17);c.setBackground(shape(0xFF1B2440,22,0xFF53618A));c.setElevation(9f);
+        TextView ic=txt(icon,24,purple,true);c.addView(ic);TextView h=txt(title,17,white,true);h.setPadding(0,9,0,4);c.addView(h);c.addView(txt(desc,12,muted,false)); TextView hint=txt("BUKA MODUL  ›",10,cyan,true);hint.setPadding(0,12,0,0);c.addView(hint);
         c.setOnClickListener(v->run.run());LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=11;body.addView(c,p);
     }
-    private void action(String s,Runnable r){TextView b=txt(s,14,white,true);b.setGravity(Gravity.CENTER);b.setPadding(15,15,15,15);b.setBackground(shape(purple,18,0xFFBBA9FF));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=10;body.addView(b,p);b.setOnClickListener(v->r.run());}
+    private void action(String s,Runnable r){TextView b=txt(s,14,white,true);b.setGravity(Gravity.CENTER);b.setPadding(15,15,15,15);b.setBackground(shape(0xFF7656D8,18,0xFFC2B2FF));b.setElevation(8f);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=10;body.addView(b,p);b.setOnClickListener(v->r.run());}
     private void home(){
-        startPage("Train your voice.","YOUR PERSONAL OFFLINE VOCAL COACH");
+        onHome=true;backAction=null; startPage("Train your voice.","YOUR PERSONAL OFFLINE VOCAL COACH");
         LinearLayout hero=col();hero.setPadding(19,20,19,20);hero.setBackground(shape(0xFF27204B,25,0xFF594A91));
         TextView pill=txt("✦  VOCAL PERFORMANCE STUDIO",10,cyan,true);hero.addView(pill);
         TextView h=txt("Temukan\nsuara terbaikmu.",29,white,true);h.setPadding(0,13,0,7);hero.addView(h);
@@ -198,7 +200,7 @@ public class MainActivity extends Activity {
     private void stopMic(){listening=false;AudioRecord old=recorder;recorder=null;if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){}}audioThread=null;}
     @Override public void onRequestPermissionsResult(int r,String[] p,int[] g){super.onRequestPermissionsResult(r,p,g);if(r==77&&g.length>0&&g[0]==PackageManager.PERMISSION_GRANTED)startMic();else if(r==77&&statusView!=null)statusView.setText("Izin mikrofon dibutuhkan.");else if(r==78)home();}
     private void exercise(String title,String guide,int inhale,int hold,int exhale){
-        startPage(title,"GUIDED VOCAL SESSION");card("✦","Panduan latihan",guide,()->{});TextView timer=txt("READY",36,purple,true);timer.setGravity(Gravity.CENTER);timer.setPadding(0,28,0,28);body.addView(timer);
+        Runnable returnPage=backAction; startPage(title,"GUIDED VOCAL SESSION"); backAction=returnPage; card("✦","Panduan latihan",guide,()->{});TextView timer=txt("READY",36,purple,true);timer.setGravity(Gravity.CENTER);timer.setPadding(0,28,0,28);body.addView(timer);
         action("MULAI 1 PUTARAN",()->{timer.setText("TARIK  "+inhale+"s");handler.postDelayed(()->timer.setText("TAHAN  "+hold+"s"),inhale*1000L);handler.postDelayed(()->timer.setText("HEMBUS  "+exhale+"s"),(inhale+hold)*1000L);handler.postDelayed(()->{timer.setText("SELESAI  ✓");sessions++;},(inhale+hold+exhale)*1000L);});action("KEMBALI",this::home);
     }
     private void piano(){
@@ -210,5 +212,13 @@ public class MainActivity extends Activity {
     private void tone(double hz){new Thread(()->{int sr=44100,n=sr*650/1000;short[] a=new short[n];for(int i=0;i<n;i++)a[i]=(short)(Math.sin(2*Math.PI*hz*i/sr)*4500*Math.min(1,Math.min(i/400.0,(n-i)/400.0)));AudioTrack t=new AudioTrack.Builder().setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()).setAudioFormat(new AudioFormat.Builder().setSampleRate(sr).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build()).setBufferSizeInBytes(n*2).build();try{t.play();t.write(a,0,n);t.stop();}finally{t.release();}}).start();}
     private void range(){startPage("Vocal Range Test","FIND YOUR COMFORTABLE RANGE");card("01  ↓","Nada terendah","Turunkan nada perlahan dari suara bicara. Catat nada yang stabil dan nyaman.",this::tuner);card("02  ↑","Nada tertinggi","Naikkan nada secara bertahap dengan volume lembut. Jangan menekan leher.",this::tuner);card("03  ✓","Evaluasi","Rentang nyaman lebih penting daripada nada ekstrem. Hentikan jika terasa sakit.",()->exercise("Evaluasi","Catat nada yang paling mudah diulang.",3,2,4));action("KEMBALI",this::home);}
     private void lessons(){startPage("Vocal Academy","LEARN • PRACTICE • IMPROVE");String[][] data={{"Postur & napas","Berdiri rileks. Bahu tidak terangkat; rasakan gerak rusuk bawah."},{"Humming","Dengungkan nada nyaman dengan bibir tertutup ringan."},{"Lip Trill","Getarkan bibir dengan aliran udara stabil tanpa menegangkan rahang."},{"Chest Voice","Latih nada bicara di rentang nyaman tanpa mendorong volume."},{"Head Voice & Falsetto","Eksplorasi nada tinggi dengan ringan, tanpa menekan leher."},{"Mixed Voice","Latih transisi register bertahap dengan vokal ringan."},{"Vibrato","Pertahankan nada panjang yang stabil dan rileks."}};for(String[] d:data)card("✧",d[0],d[1],()->exercise(d[0],d[1],4,2,6));action("KEMBALI",this::home);}
+    private void goBack(){ if(backAction!=null){Runnable target=backAction;backAction=null;stopMic();target.run();}else home(); }
+    @Override public void onBackPressed(){
+        if(!onHome){goBack();return;}
+        new android.app.AlertDialog.Builder(this).setTitle("Keluar dari GV Vokal Master?")
+            .setMessage("Yakin ingin menutup aplikasi?")
+            .setNegativeButton("Batal",(d,w)->d.dismiss())
+            .setPositiveButton("Keluar",(d,w)->{stopMic();finish();}).show();
+    }
     @Override protected void onDestroy(){stopMic();super.onDestroy();}
 }
