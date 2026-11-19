@@ -110,7 +110,7 @@ public class MainActivity extends Activity {
                 else if(type.startsWith("Mezzo"))genres="Pop, R&B, soul, musical theatre, dan jazz.";
                 else if(type.startsWith("Soprano"))genres="Pop, musical theatre, klasik, folk, dan balada bernada tinggi.";
                 else genres="Coba pop, akustik, jazz, atau genre yang nyaman di tessitura suaramu.";
-                report="HASIL VOCAL IDENTITY\n\nKategori perkiraan: "+type+"\nRentang inti terdeteksi (persentil 5–95): "+midiName(lo)+" – "+midiName(hi)+"\nJumlah sampel suara: "+pitches.size()+"\n\nIDE GENRE UNTUK DIEKSPLORASI\n"+genres+"\n\nCatatan: ini estimasi awal dari rentang nada yang tertangkap, bukan diagnosis tipe suara profesional. Tipe vokal juga ditentukan tessitura, warna suara, transisi register, dan kenyamanan. Ulangi tes beberapa kali untuk hasil lebih konsisten.";
+                report="HASIL VOCAL IDENTITY\n\nKandidat rentang (belum klasifikasi final): "+type+"\nRentang inti terdeteksi (persentil 5–95): "+midiName(lo)+" – "+midiName(hi)+"\nJumlah sampel suara: "+pitches.size()+"\n\nIDE GENRE UNTUK DIEKSPLORASI\n"+genres+"\n\nCatatan akurasi: YIN mengurangi kesalahan deteksi oktaf dibanding metode sebelumnya. Rentang memakai persentil agar satu nada salah tidak langsung menentukan hasil. Namun kategori ini masih kandidat berbasis nada saja. Klasifikasi vokal yang dapat dipercaya perlu tes tessitura (nada yang nyaman dinyanyikan berulang), transisi register/passaggio, warna suara, dan evaluasi beberapa sesi. Genre bukan ditentukan oleh tipe suara saja.";
             }
             final String out=report;handler.post(()->result.setText(out));
         }).start();
