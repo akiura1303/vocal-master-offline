@@ -260,7 +260,38 @@ public class MainActivity extends Activity {
         for(int i=0;i<names.length;i++){final int midi=60+semis[i];TextView key=txt(names[i]+"     ♫",17,white,true);key.setGravity(Gravity.CENTER);key.setPadding(10,17,10,17);key.setBackground(shape(0xFF252B43,13,0xFF555E80));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=7;body.addView(key,p);key.setOnClickListener(v->tone(440*Math.pow(2,(midi-69)/12.0)));}
         action("KEMBALI",this::home);
     }
-    private void tone(double hz){new Thread(()->{int sr=44100,n=sr*650/1000;short[] a=new short[n];for(int i=0;i<n;i++)a[i]=(short)(Math.sin(2*Math.PI*hz*i/sr)*4500*Math.min(1,Math.min(i/400.0,(n-i)/400.0)));AudioTrack t=new AudioTrack.Builder().setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()).setAudioFormat(new AudioFormat.Builder().setSampleRate(sr).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build()).setBufferSizeInBytes(n*2).build();try{t.play();t.write(a,0,n);t.stop();}finally{t.release();}}).start();}
+    private AudioTrack pianoTrack;
+    private synchronized void tone(double hz){
+        final int sr=44100,n=sr*700/1000;
+        short[] samples=new short[n];
+        for(int i=0;i<n;i++){
+            double fade=Math.min(1.0,Math.min(i/500.0,(n-i)/1800.0));
+            double fundamental=Math.sin(2*Math.PI*hz*i/sr);
+            double harmonic=0.22*Math.sin(2*Math.PI*hz*2*i/sr)+0.08*Math.sin(2*Math.PI*hz*3*i/sr);
+            samples[i]=(short)((fundamental+harmonic)*4200*Math.max(0,fade));
+        }
+        try{
+            if(pianoTrack!=null){try{pianoTrack.stop();}catch(Exception ignored){}try{pianoTrack.release();}catch(Exception ignored){}pianoTrack=null;}
+            AudioTrack track=new AudioTrack.Builder()
+                .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                .setAudioFormat(new AudioFormat.Builder().setSampleRate(sr).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .setBufferSizeInBytes(samples.length*2)
+                .build();
+            int written=track.write(samples,0,samples.length,AudioTrack.WRITE_BLOCKING);
+            if(written!=samples.length){track.release();throw new IllegalStateException("AudioTrack gagal memuat nada");}
+            track.setVolume(0.85f);
+            pianoTrack=track;
+            track.play();
+            handler.postDelayed(()->{
+                synchronized(MainActivity.this){
+                    if(pianoTrack==track){try{track.stop();}catch(Exception ignored){}track.release();pianoTrack=null;}
+                }
+            },750);
+        }catch(Exception e){
+            handler.post(()->Toast.makeText(MainActivity.this,"Audio piano gagal diputar. Periksa volume media perangkat.",Toast.LENGTH_LONG).show());
+        }
+    }
     private void range(){startPage("Vocal Range Test","FIND YOUR COMFORTABLE RANGE");card("01  ↓","Nada terendah","Turunkan nada perlahan dari suara bicara. Catat nada yang stabil dan nyaman.",this::tuner);card("02  ↑","Nada tertinggi","Naikkan nada secara bertahap dengan volume lembut. Jangan menekan leher.",this::tuner);card("03  ✓","Evaluasi","Rentang nyaman lebih penting daripada nada ekstrem. Hentikan jika terasa sakit.",()->exercise("Evaluasi","Catat nada yang paling mudah diulang.",3,2,4));action("KEMBALI",this::home);}
     private void lessons(){startPage("Vocal Academy","LEARN • PRACTICE • IMPROVE");String[][] data={{"Postur & napas","Berdiri rileks. Bahu tidak terangkat; rasakan gerak rusuk bawah."},{"Humming","Dengungkan nada nyaman dengan bibir tertutup ringan."},{"Lip Trill","Getarkan bibir dengan aliran udara stabil tanpa menegangkan rahang."},{"Chest Voice","Latih nada bicara di rentang nyaman tanpa mendorong volume."},{"Head Voice & Falsetto","Eksplorasi nada tinggi dengan ringan, tanpa menekan leher."},{"Mixed Voice","Latih transisi register bertahap dengan vokal ringan."},{"Vibrato","Pertahankan nada panjang yang stabil dan rileks."}};for(String[] d:data)card("✧",d[0],d[1],()->exercise(d[0],d[1],4,2,6));action("KEMBALI",this::home);}
     private void goBack(){ if(backAction!=null){Runnable target=backAction;backAction=null;stopMic();target.run();}else home(); }
