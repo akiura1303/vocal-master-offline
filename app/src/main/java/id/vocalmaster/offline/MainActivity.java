@@ -81,17 +81,18 @@ public class MainActivity extends Activity {
         result.setText("Sedang merekam… nyanyikan nada nyaman dari rendah ke tinggi. Jangan memaksa suara.");
         new Thread(()->{
             int sr=44100,min=AudioRecord.getMinBufferSize(sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-            AudioRecord rec=null;double low=2000,high=0;int valid=0;
+            AudioRecord rec=null;java.util.ArrayList<Double> pitches=new java.util.ArrayList<>();
             try{
                 rec=new AudioRecord(MediaRecorder.AudioSource.MIC,sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,Math.max(min,16384));rec.startRecording();
                 short[] data=new short[4096];long end=System.currentTimeMillis()+12000;
                 while(System.currentTimeMillis()<end){
-                    int n=rec.read(data,0,data.length);if(n>1024){double f=detect(data,n,sr);if(f>=65&&f<=1000){low=Math.min(low,f);high=Math.max(high,f);valid++;}}
+                    int n=rec.read(data,0,data.length);if(n>1024){double f=detect(data,n,sr);if(f>=65&&f<=1000){pitches.add(f);}}
                 }
             }catch(Exception ignored){}finally{if(rec!=null){try{rec.stop();}catch(Exception ignored){}rec.release();}}
             final String report;
-            if(valid<5) report="Suara belum terbaca dengan cukup jelas. Coba lagi di ruangan tenang, dekatkan ponsel, dan nyanyikan nada stabil.";
+            if(pitches.size()<12) report="Suara belum terbaca dengan cukup jelas. Coba lagi di ruangan tenang, dekatkan ponsel, dan nyanyikan nada stabil.";
             else{
+                double low=percentile(new java.util.ArrayList<>(pitches),0.05),high=percentile(new java.util.ArrayList<>(pitches),0.95);
                 int lo=(int)Math.round(69+12*Math.log(low/440)/Math.log(2));
                 int hi=(int)Math.round(69+12*Math.log(high/440)/Math.log(2));
                 String type;
@@ -109,7 +110,7 @@ public class MainActivity extends Activity {
                 else if(type.startsWith("Mezzo"))genres="Pop, R&B, soul, musical theatre, dan jazz.";
                 else if(type.startsWith("Soprano"))genres="Pop, musical theatre, klasik, folk, dan balada bernada tinggi.";
                 else genres="Coba pop, akustik, jazz, atau genre yang nyaman di tessitura suaramu.";
-                report="HASIL VOCAL IDENTITY\n\nKategori perkiraan: "+type+"\nRentang terdeteksi: "+midiName(lo)+" – "+midiName(hi)+"\n\nIDE GENRE UNTUK DIEKSPLORASI\n"+genres+"\n\nCatatan: ini estimasi awal dari rentang nada yang tertangkap, bukan diagnosis tipe suara profesional. Tipe vokal juga ditentukan tessitura, warna suara, transisi register, dan kenyamanan. Ulangi tes beberapa kali untuk hasil lebih konsisten.";
+                report="HASIL VOCAL IDENTITY\n\nKategori perkiraan: "+type+"\nRentang inti terdeteksi (persentil 5–95): "+midiName(lo)+" – "+midiName(hi)+"\nJumlah sampel suara: "+pitches.size()+"\n\nIDE GENRE UNTUK DIEKSPLORASI\n"+genres+"\n\nCatatan: ini estimasi awal dari rentang nada yang tertangkap, bukan diagnosis tipe suara profesional. Tipe vokal juga ditentukan tessitura, warna suara, transisi register, dan kenyamanan. Ulangi tes beberapa kali untuk hasil lebih konsisten.";
             }
             final String out=report;handler.post(()->result.setText(out));
         }).start();
@@ -130,7 +131,40 @@ public class MainActivity extends Activity {
         listening=true;statusView.setText("Mendengarkan suara…");
         audioThread=new Thread(()->{short[] data=new short[4096];while(listening){AudioRecord r=recorder;if(r==null)break;int n;try{n=r.read(data,0,data.length);}catch(Exception e){break;}if(n>1024){double f=detect(data,n,sr);if(f>55&&f<1200){final double hz=f;final String note=noteName(f);handler.post(()->{if(hzView!=null){hzView.setText(String.format(Locale.US,"%.1f",hz));noteView.setText(note);}});}}}});audioThread.start();
     }
-    private double detect(short[] x,int n,int sr){double rms=0;for(int i=0;i<n;i++)rms+=(double)x[i]*x[i];if(Math.sqrt(rms/n)<250)return 0;int best=0;double peak=0;for(int lag=sr/1200;lag<=Math.min(sr/55,n/2);lag++){double sum=0;for(int i=0;i<n-lag;i+=4)sum+=(double)x[i]*x[i+lag];if(sum>peak){peak=sum;best=lag;}}return best>0?(double)sr/best:0;}
+    // YIN pitch estimator: normalized difference function reduces octave errors
+    // compared with selecting the largest raw autocorrelation peak.
+    private double detect(short[] x,int n,int sr){
+        if(n<1024)return 0;
+        int size=Math.min(n,4096), minLag=Math.max(2,sr/1000), maxLag=Math.min(size/2,sr/60);
+        double mean=0;for(int i=0;i<size;i++)mean+=x[i];mean/=size;
+        double rms=0;for(int i=0;i<size;i++){double v=x[i]-mean;rms+=v*v;}
+        rms=Math.sqrt(rms/size);if(rms<180)return 0;
+        double[] diff=new double[maxLag+1];
+        for(int tau=1;tau<=maxLag;tau++){
+            double sum=0;
+            for(int i=0;i<size-maxLag;i+=2){double a=x[i]-mean,b=x[i+tau]-mean;double d=a-b;sum+=d*d;}
+            diff[tau]=sum;
+        }
+        double running=0;double[] cmnd=new double[maxLag+1];cmnd[0]=1;
+        for(int tau=1;tau<=maxLag;tau++){running+=diff[tau];cmnd[tau]=running>0?diff[tau]*tau/running:1;}
+        int chosen=-1;
+        for(int tau=minLag;tau<=maxLag;tau++){
+            if(cmnd[tau]<0.15){while(tau+1<=maxLag&&cmnd[tau+1]<cmnd[tau])tau++;chosen=tau;break;}
+        }
+        if(chosen<0){double best=1;for(int tau=minLag;tau<=maxLag;tau++)if(cmnd[tau]<best){best=cmnd[tau];chosen=tau;}if(best>0.32)return 0;}
+        double refined=chosen;
+        if(chosen>1&&chosen<maxLag){
+            double a=cmnd[chosen-1],b=cmnd[chosen],c=cmnd[chosen+1],den=2*(2*b-a-c);
+            if(Math.abs(den)>1e-9)refined+= (a-c)/den;
+        }
+        double hz=sr/refined;
+        return hz>=60&&hz<=1000?hz:0;
+    }
+    private double percentile(java.util.ArrayList<Double> values,double q){
+        java.util.Collections.sort(values);
+        int i=(int)Math.round((values.size()-1)*q);
+        return values.get(Math.max(0,Math.min(values.size()-1,i)));
+    }
     private String noteName(double f){String[] ns={"C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"};double m=69+12*Math.log(f/440)/Math.log(2);int midi=(int)Math.round(m),c=(int)Math.round((m-midi)*100);return ns[(midi%12+12)%12]+" "+(midi/12-1)+"   "+(c>=0?"+":"")+c+" cents";}
     private void stopMic(){listening=false;AudioRecord old=recorder;recorder=null;if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){}}audioThread=null;}
     @Override public void onRequestPermissionsResult(int r,String[] p,int[] g){super.onRequestPermissionsResult(r,p,g);if(r==77&&g.length>0&&g[0]==PackageManager.PERMISSION_GRANTED)startMic();else if(r==77&&statusView!=null)statusView.setText("Izin mikrofon dibutuhkan.");else if(r==78)home();}
