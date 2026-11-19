@@ -34,11 +34,11 @@ public class MainActivity extends Activity {
         stopMic(); onHome=false; backAction=()->home();
         page=col(); page.setBackground(shape(bg,0,0xFF292044));
         ScrollView sc=new ScrollView(this); sc.setFillViewport(true);
-        body=col(); body.setPadding(20,18,20,30); sc.addView(body); page.addView(sc); setContentView(page);
+        body=col(); body.setPadding(20,30,20,30); sc.addView(body); page.addView(sc); setContentView(page);
         LinearLayout nav=new LinearLayout(this); nav.setGravity(Gravity.CENTER_VERTICAL); nav.setPadding(0,0,0,16);
         TextView back=txt("‹",26,white,true); back.setGravity(Gravity.CENTER); back.setBackground(shape(0xFF292342,18,0xFF6555A0)); back.setElevation(10);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(48,44); bp.rightMargin=12; nav.addView(back,bp); back.setOnClickListener(v->goBack());
-        LinearLayout brandBox=col(); brandBox.addView(txt("GV  /  VOKAL MASTER",12,white,true)); brandBox.addView(txt("PREMIUM VOCAL STUDIO",9,cyan,true)); nav.addView(brandBox);
+        LinearLayout brandBox=col(); brandBox.addView(txt("GV  /  VOKAL MASTER",16,white,true)); brandBox.addView(txt("PREMIUM VOCAL STUDIO",10,cyan,true)); nav.addView(brandBox);
         body.addView(nav);
         TextView head=txt(title,29,white,true); head.setPadding(0,9,0,3); body.addView(head);
         TextView sub=txt("✦  "+eyebrow,10,cyan,true); sub.setPadding(0,0,0,18); body.addView(sub);
@@ -90,11 +90,11 @@ public class MainActivity extends Activity {
         private void home(){
         startPage("Your voice. Your power.","PERSONAL OFFLINE VOCAL COACH"); onHome=true; backAction=null;
         LinearLayout frame=col(); frame.setPadding(2,2,2,8); frame.setBackground(shape(0xFF7455D8,28,0xFFBCA9FF)); frame.setElevation(16f);
-        LinearLayout hero=col(); hero.setPadding(20,22,20,22); hero.setBackground(shape(0xFF1C2040,26,0xFF51447D)); frame.addView(hero);
+        LinearLayout hero=col(); hero.setPadding(22,28,22,26); hero.setBackground(shape(0xFF1C2040,26,0xFF51447D)); frame.addView(hero);
         LinearLayout brandRow=new LinearLayout(this); brandRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView logo=txt("♫",30,white,true); logo.setGravity(Gravity.CENTER); logo.setBackground(shape(0xFF49377F,17,0xFFAB91FF));
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(56,54); lp.rightMargin=12; brandRow.addView(logo,lp);
-        LinearLayout brand=col(); brand.addView(txt("GV VOKAL MASTER",12,white,true)); brand.addView(txt("BY RAKANA  •  OFFLINE STUDIO",9,cyan,true)); brandRow.addView(brand); hero.addView(brandRow);
+        TextView logo=txt("♫",36,white,true); logo.setGravity(Gravity.CENTER); logo.setBackground(shape(0xFF49377F,17,0xFFAB91FF));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(66,64); lp.rightMargin=12; brandRow.addView(logo,lp);
+        LinearLayout brand=col(); brand.addView(txt("GV VOKAL MASTER",17,white,true)); brand.addView(txt("BY RAKANA  •  OFFLINE STUDIO",10,cyan,true)); brandRow.addView(brand); hero.addView(brandRow);
         TextView h=txt("Temukan suara\nterbaikmu.",30,white,true); h.setPadding(0,22,0,8); hero.addView(h);
         hero.addView(txt("Latih teknik. Kenali nada. Bangun karakter vokal.",13,0xFFD5D2EA,false));
         TextView start=txt("▶   ENTER VOCAL STUDIO",12,white,true); start.setGravity(Gravity.CENTER); start.setPadding(12,16,12,16);
