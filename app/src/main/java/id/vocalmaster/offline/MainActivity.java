@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
     }
     private void action(String s,Runnable r){TextView b=txt(s,14,white,true);b.setGravity(Gravity.CENTER);b.setPadding(15,15,15,15);b.setBackground(shape(0xFF7656D8,18,0xFFC2B2FF));b.setElevation(8f);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=10;body.addView(b,p);b.setOnClickListener(v->r.run());}
     private void home(){
-        onHome=true;backAction=null; startPage("Train your voice.","YOUR PERSONAL OFFLINE VOCAL COACH");
+        onHome=true;backAction=null; startPage("Train your voice.","YOUR PERSONAL OFFLINE VOCAL COACH"); onHome=true; backAction=null;
         LinearLayout hero=col();hero.setPadding(19,20,19,20);hero.setBackground(shape(0xFF27204B,25,0xFF594A91));
         TextView pill=txt("✦  VOCAL PERFORMANCE STUDIO",10,cyan,true);hero.addView(pill);
         TextView h=txt("Temukan\nsuara terbaikmu.",29,white,true);h.setPadding(0,13,0,7);hero.addView(h);
