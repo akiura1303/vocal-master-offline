@@ -129,7 +129,36 @@ public class MainActivity extends Activity {
         int sr=44100,min=AudioRecord.getMinBufferSize(sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
         try{recorder=new AudioRecord(MediaRecorder.AudioSource.MIC,sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,Math.max(min,8192));recorder.startRecording();}catch(Exception e){statusView.setText("Mikrofon tidak dapat diakses.");return;}
         listening=true;statusView.setText("Mendengarkan suara…");
-        audioThread=new Thread(()->{short[] data=new short[4096];while(listening){AudioRecord r=recorder;if(r==null)break;int n;try{n=r.read(data,0,data.length);}catch(Exception e){break;}if(n>1024){double f=detect(data,n,sr);if(f>55&&f<1200){final double hz=f;final String note=noteName(f);handler.post(()->{if(hzView!=null){hzView.setText(String.format(Locale.US,"%.1f",hz));noteView.setText(note);}});}}}});audioThread.start();
+        audioThread=new Thread(()->{
+            short[] data=new short[4096];
+            java.util.ArrayDeque<Double> recent=new java.util.ArrayDeque<>();
+            while(listening){
+                AudioRecord r=recorder;if(r==null)break;
+                int n;try{n=r.read(data,0,data.length);}catch(Exception e){break;}
+                if(n>1024){
+                    double f=detect(data,n,sr);
+                    if(f>55&&f<1200){
+                        recent.addLast(f);if(recent.size()>15)recent.removeFirst();
+                        java.util.ArrayList<Double> sorted=new java.util.ArrayList<>(recent);
+                        java.util.Collections.sort(sorted);
+                        double smooth=sorted.get(sorted.size()/2);
+                        double midi=69+12*Math.log(smooth/440.0)/Math.log(2);
+                        double nearest=Math.rint(midi),cents=(midi-nearest)*100.0;
+                        java.util.ArrayList<Double> deviations=new java.util.ArrayList<>();
+                        for(double value:recent){double m=69+12*Math.log(value/440.0)/Math.log(2);deviations.add(Math.abs((m-nearest)*100.0));}
+                        java.util.Collections.sort(deviations);
+                        double stability=deviations.get(deviations.size()/2);
+                        final double hz=smooth,stable=stability,offset=cents;
+                        final String note=noteName(smooth);
+                        handler.post(()->{if(hzView!=null){
+                            hzView.setText(String.format(Locale.US,"%.1f Hz",hz));noteView.setText(note);
+                            String quality=stable<10?"stabil":stable<25?"cukup stabil":"belum stabil";
+                            statusView.setText(String.format(Locale.US,"Selisih nada: %+.0f cents  •  Variasi median: %.0f cents  •  %s",offset,stable,quality));
+                        }});
+                    } else if(recent.size()>0){recent.clear();handler.post(()->{if(statusView!=null)statusView.setText("Sinyal belum jelas. Coba nada tunggal dengan suara stabil.");});}
+                }
+            }
+        });audioThread.start();
     }
     // YIN pitch estimator: normalized difference function reduces octave errors
     // compared with selecting the largest raw autocorrelation peak.
