@@ -99,7 +99,7 @@ public class MainActivity extends Activity {
         hero.addView(txt("Latih teknik. Kenali nada. Bangun karakter vokal.",13,0xFFD5D2EA,false));
         TextView start=txt("▶   ENTER VOCAL STUDIO",12,white,true); start.setGravity(Gravity.CENTER); start.setPadding(12,16,12,16);
         start.setBackground(shape(0xFF7657DF,17,0xFFBCA9FF)); start.setElevation(9f);
-        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2); sp.topMargin=19; hero.addView(start,sp); start.setOnClickListener(v->{body.smoothScrollTo(0,hero.getBottom());});
+        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2); sp.topMargin=19; hero.addView(start,sp); start.setOnClickListener(v->{((ScrollView)page.getChildAt(0)).smoothScrollTo(0,hero.getBottom());});
         body.addView(frame);
         LinearLayout stats=new LinearLayout(this); stats.setPadding(0,16,0,7);
         stats.addView(stat("0"+sessions,"SESI LATIHAN")); stats.addView(stat("100%","OFFLINE")); body.addView(stats);
