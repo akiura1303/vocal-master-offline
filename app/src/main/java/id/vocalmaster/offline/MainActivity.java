@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
         stats.addView(stat("0"+sessions,"SESI LATIHAN"));stats.addView(stat("OFFLINE","MODE PRIVAT"));body.addView(stats);
         label("Studio latihan");
         card("◉","Pitch Analyzer","Deteksi frekuensi, nama nada, dan kestabilan pitch.",this::tuner);
+        card("✺","Vocal Identity","Kenali perkiraan tipe suara, jangkauan vokal, karakter, dan rekomendasi genre.",this::identity);
         card("◌","Breathing Coach","Latihan napas terarah untuk kontrol dan stamina.",()->exercise("Breathing Coach","Tarik napas lembut 4 hitungan. Tahan 2 hitungan, lalu hembuskan 6 hitungan.",4,2,6));
         card("✧","Vocal Warm-up","Humming, lip trill, dan pemanasan rentang nada.",()->exercise("Vocal Warm-up","Mulai humming ringan, lanjut lip trill, lalu siren lembut. Jangan memaksa tenggorokan.",4,2,5));
         card("♫","Virtual Piano","Nada referensi untuk membantu latihan intonasi.",this::piano);
@@ -61,6 +62,59 @@ public class MainActivity extends Activity {
         TextView credit=txt("GV Vokal Master  •  By Rakana\nDibuat untuk latihan vokal offline. Audio diproses langsung di perangkat.",11,muted,false);credit.setGravity(Gravity.CENTER);credit.setPadding(8,14,8,10);body.addView(credit);
     }
     private View stat(String value,String caption){LinearLayout box=col();box.setPadding(14,12,14,12);box.setBackground(shape(panel,17,0xFF303956));TextView v=txt(value,17,white,true);box.addView(v);box.addView(txt(caption,9,muted,true));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.setMargins(0,0,8,0);box.setLayoutParams(p);return box;}
+    private void identity(){
+        startPage("Vocal Identity","DISCOVER YOUR VOICE PROFILE");
+        LinearLayout hero=col();hero.setPadding(17,18,17,18);hero.setBackground(shape(0xFF27204B,22,0xFF594A91));
+        hero.addView(txt("✺  VOICE PROFILE SCAN",11,cyan,true));
+        TextView intro=txt("Kenali karakter suaramu.",23,white,true);intro.setPadding(0,10,0,7);hero.addView(intro);
+        hero.addView(txt("Nyanyikan nada rendah, nada tengah, lalu nada tinggi yang terasa nyaman selama proses pemindaian. Hasil dihitung langsung di ponsel.",13,0xFFD5D2EA,false));body.addView(hero);
+        label("Yang akan dianalisis");
+        card("↕","Rentang nada","Perkiraan nada terendah dan tertinggi yang berhasil terdeteksi.",()->{});
+        card("♫","Kategori vokal","Perkiraan bass, baritone, tenor, contralto, mezzo-soprano, atau soprano berdasarkan rentang.",()->{});
+        card("✧","Rekomendasi genre","Ide genre yang mungkin cocok untuk dieksplorasi, bukan batasan kemampuan bernyanyi.",()->{});
+        TextView result=txt("Belum ada hasil pemindaian.",15,white,true);result.setPadding(15,18,15,18);result.setBackground(shape(panel,18,0xFF303956));body.addView(result);
+        action("◉  MULAI SCAN SUARA  •  12 DETIK",()->scanIdentity(result));
+        action("KEMBALI KE MENU",this::home);
+    }
+    private void scanIdentity(TextView result){
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},78);return;}
+        result.setText("Sedang merekam… nyanyikan nada nyaman dari rendah ke tinggi. Jangan memaksa suara.");
+        new Thread(()->{
+            int sr=44100,min=AudioRecord.getMinBufferSize(sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
+            AudioRecord rec=null;double low=2000,high=0;int valid=0;
+            try{
+                rec=new AudioRecord(MediaRecorder.AudioSource.MIC,sr,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,Math.max(min,16384));rec.startRecording();
+                short[] data=new short[4096];long end=System.currentTimeMillis()+12000;
+                while(System.currentTimeMillis()<end){
+                    int n=rec.read(data,0,data.length);if(n>1024){double f=detect(data,n,sr);if(f>=65&&f<=1000){low=Math.min(low,f);high=Math.max(high,f);valid++;}}
+                }
+            }catch(Exception ignored){}finally{if(rec!=null){try{rec.stop();}catch(Exception ignored){}rec.release();}}
+            final String report;
+            if(valid<5) report="Suara belum terbaca dengan cukup jelas. Coba lagi di ruangan tenang, dekatkan ponsel, dan nyanyikan nada stabil.";
+            else{
+                int lo=(int)Math.round(69+12*Math.log(low/440)/Math.log(2));
+                int hi=(int)Math.round(69+12*Math.log(high/440)/Math.log(2));
+                String type;
+                if(lo<=40&&hi<=62)type="Bass (perkiraan)";
+                else if(lo<=45&&hi<=67)type="Baritone (perkiraan)";
+                else if(lo<=49&&hi>=68)type="Tenor (perkiraan)";
+                else if(lo<=53&&hi<=74)type="Contralto (perkiraan)";
+                else if(lo<=57&&hi>=74)type="Mezzo-soprano (perkiraan)";
+                else if(hi>=76)type="Soprano (perkiraan)";
+                else type="Rentang vokal menengah (perlu tes lanjutan)";
+                String genres;
+                if(type.startsWith("Bass")||type.startsWith("Baritone"))genres="Pop mellow, jazz, blues, soul, country, dan lagu bernada rendah.";
+                else if(type.startsWith("Tenor"))genres="Pop, rock, musical theatre, R&B, dan balada.";
+                else if(type.startsWith("Contralto"))genres="Jazz, soul, blues, pop akustik, dan ballad.";
+                else if(type.startsWith("Mezzo"))genres="Pop, R&B, soul, musical theatre, dan jazz.";
+                else if(type.startsWith("Soprano"))genres="Pop, musical theatre, klasik, folk, dan balada bernada tinggi.";
+                else genres="Coba pop, akustik, jazz, atau genre yang nyaman di tessitura suaramu.";
+                report="HASIL VOCAL IDENTITY\n\nKategori perkiraan: "+type+"\nRentang terdeteksi: "+midiName(lo)+" – "+midiName(hi)+"\n\nIDE GENRE UNTUK DIEKSPLORASI\n"+genres+"\n\nCatatan: ini estimasi awal dari rentang nada yang tertangkap, bukan diagnosis tipe suara profesional. Tipe vokal juga ditentukan tessitura, warna suara, transisi register, dan kenyamanan. Ulangi tes beberapa kali untuk hasil lebih konsisten.";
+            }
+            final String out=report;handler.post(()->result.setText(out));
+        }).start();
+    }
+    private String midiName(int m){String[] ns={"C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"};return ns[(m%12+12)%12]+(m/12-1);}
     private void tuner(){
         startPage("Pitch Analyzer","REAL-TIME VOICE ANALYSIS");
         LinearLayout meter=col();meter.setGravity(Gravity.CENTER);meter.setPadding(15,28,15,28);meter.setBackground(shape(0xFF171C35,25,0xFF48406F));
@@ -79,7 +133,7 @@ public class MainActivity extends Activity {
     private double detect(short[] x,int n,int sr){double rms=0;for(int i=0;i<n;i++)rms+=(double)x[i]*x[i];if(Math.sqrt(rms/n)<250)return 0;int best=0;double peak=0;for(int lag=sr/1200;lag<=Math.min(sr/55,n/2);lag++){double sum=0;for(int i=0;i<n-lag;i+=4)sum+=(double)x[i]*x[i+lag];if(sum>peak){peak=sum;best=lag;}}return best>0?(double)sr/best:0;}
     private String noteName(double f){String[] ns={"C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"};double m=69+12*Math.log(f/440)/Math.log(2);int midi=(int)Math.round(m),c=(int)Math.round((m-midi)*100);return ns[(midi%12+12)%12]+" "+(midi/12-1)+"   "+(c>=0?"+":"")+c+" cents";}
     private void stopMic(){listening=false;AudioRecord old=recorder;recorder=null;if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){}}audioThread=null;}
-    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g){super.onRequestPermissionsResult(r,p,g);if(r==77&&g.length>0&&g[0]==PackageManager.PERMISSION_GRANTED)startMic();else if(r==77&&statusView!=null)statusView.setText("Izin mikrofon dibutuhkan.");}
+    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g){super.onRequestPermissionsResult(r,p,g);if(r==77&&g.length>0&&g[0]==PackageManager.PERMISSION_GRANTED)startMic();else if(r==77&&statusView!=null)statusView.setText("Izin mikrofon dibutuhkan.");else if(r==78)home();}
     private void exercise(String title,String guide,int inhale,int hold,int exhale){
         startPage(title,"GUIDED VOCAL SESSION");card("✦","Panduan latihan",guide,()->{});TextView timer=txt("READY",36,purple,true);timer.setGravity(Gravity.CENTER);timer.setPadding(0,28,0,28);body.addView(timer);
         action("MULAI 1 PUTARAN",()->{timer.setText("TARIK  "+inhale+"s");handler.postDelayed(()->timer.setText("TAHAN  "+hold+"s"),inhale*1000L);handler.postDelayed(()->timer.setText("HEMBUS  "+exhale+"s"),(inhale+hold)*1000L);handler.postDelayed(()->{timer.setText("SELESAI  ✓");sessions++;},(inhale+hold+exhale)*1000L);});action("KEMBALI",this::home);
